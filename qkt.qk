@@ -1,0 +1,71 @@
+/* QuarkLang 测试断言库（工具链：qktest）
+ *
+ * 用法：
+ *   import "qkt";
+ *   fn main(IOStream io) {
+ *       qkt::setup(io);                       // 绑定 io（每个测试文件调用一次）
+ *       qkt::eq("加法", (1 + 2).toString(), "3");
+ *       qkt::ok("为真", 3 > 2);
+ *       qkt::near("浮点", 1.0 / 3.0, 0.3333, 0.001);
+ *       qkt::report();                        // 输出汇总行 qkt: N tests, M failures
+ *   }
+ *
+ * 约定：失败输出 FAIL <名字> got=[...] want=[...]；汇总行以 "qkt: " 开头，
+ *       runner（qktest）据此判断退出码；断言全部通过时同样输出汇总行。
+ */
+program library;
+
+type struct {
+    IOStream io;
+    int total;
+    int failed;
+} QktState;
+
+impl {
+    fn setup(IOStream out) QktState {
+        QktState s;
+        s.io = out;
+        s.total = 0;
+        s.failed = 0;
+        return s;
+    }
+    fn check(QktState s, String name, bool cond, String got, String want) void {
+        s.total = s.total + 1;
+        if (cond) {
+            s.io.println("ok " + name);
+        } else {
+            s.failed = s.failed + 1;
+            s.io.println("FAIL " + name + " got=[" + got + "] want=[" + want + "]");
+        }
+    }
+    fn report(QktState s) int {
+        s.io.println("qkt: " + s.total.toString() + " tests, " + s.failed.toString() + " failures");
+        return s.failed;
+    }
+} Qkt;
+
+space {
+    fn setup(IOStream io) QktState { return Qkt::setup(io); }
+
+    fn ok(QktState st, String name, bool cond) void {
+        Qkt::check(st, name, cond, cond.toString(), "true");
+    }
+    fn eq(QktState st, String name, String got, String want) void {
+        Qkt::check(st, name, got == want, got, want);
+    }
+    fn eqInt(QktState st, String name, int got, int want) void {
+        Qkt::check(st, name, got == want, got.toString(), want.toString());
+    }
+    fn eqBool(QktState st, String name, bool got, bool want) void {
+        Qkt::check(st, name, got == want, got.toString(), want.toString());
+    }
+    fn near(QktState st, String name, float got, float want, float eps) void {
+        float d = got - want;
+        if (d < 0.0) { d = 0.0 - d; }
+        Qkt::check(st, name, d <= eps, got.toString(), want.toString());
+    }
+    fn fail(QktState st, String name, String msg) void {
+        Qkt::check(st, name, false, msg, "pass");
+    }
+    fn report(QktState st) int { return Qkt::report(st); }
+} qkt;

@@ -1,0 +1,12 @@
+program main;
+import "qkt";
+
+fn main(IOStream io) {
+    QktState st = qkt::setup(io);
+    qkt::eq(st, "字符串拼接", "a" + "b", "ab");
+    qkt::eqInt(st, "整数运算", 2 + 3, 5);
+    qkt::ok(st, "布尔条件", 3 > 2);
+    qkt::near(st, "浮点近似", 1.0 / 3.0, 0.3333, 0.001);
+    qkt::eq(st, "故意失败示例", "x", "y");
+    qkt::report(st);
+}
